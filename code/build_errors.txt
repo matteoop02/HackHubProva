@@ -1,0 +1,193 @@
+Calculating task graph as configuration cache cannot be reused because system property 'stderr.encoding' has changed.
+> Task :check UP-TO-DATE
+> Task :processResources UP-TO-DATE
+
+> Task :compileJava
+D:\University\III Anno\Ingegneria del software\code_iterazioneV0\src\main\java\unicam\ids\HackHub\model\Hackathon.java:71: warning: @Builder will ignore the initializing expression entirely. If you want the initializing expression to serve as default, add @Builder.Default. If it is not supposed to be settable during building, make the field final.
+    private Set<User> mentors = new HashSet<>();
+                      ^
+D:\University\III Anno\Ingegneria del software\code_iterazioneV0\src\main\java\unicam\ids\HackHub\model\Hackathon.java:74: warning: @Builder will ignore the initializing expression entirely. If you want the initializing expression to serve as default, add @Builder.Default. If it is not supposed to be settable during building, make the field final.
+    private Set<Team> teams = new HashSet<>();
+                      ^
+D:\University\III Anno\Ingegneria del software\code_iterazioneV0\src\main\java\unicam\ids\HackHub\model\Team.java:39: warning: @Builder will ignore the initializing expression entirely. If you want the initializing expression to serve as default, add @Builder.Default. If it is not supposed to be settable during building, make the field final.
+    private List<User> members = new ArrayList<>();
+                       ^
+D:\University\III Anno\Ingegneria del software\code_iterazioneV0\src\main\java\unicam\ids\HackHub\model\Team.java:43: warning: @Builder will ignore the initializing expression entirely. If you want the initializing expression to serve as default, add @Builder.Default. If it is not supposed to be settable during building, make the field final.
+    private List<User> mentors = new ArrayList<>();
+                       ^
+D:\University\III Anno\Ingegneria del software\code_iterazioneV0\src\main\java\unicam\ids\HackHub\model\UserRole.java:28: warning: @Builder will ignore the initializing expression entirely. If you want the initializing expression to serve as default, add @Builder.Default. If it is not supposed to be settable during building, make the field final.
+    private Boolean isActive = true;
+                    ^
+D:\University\III Anno\Ingegneria del software\code_iterazioneV0\src\main\java\unicam\ids\HackHub\model\User.java:65: warning: @Builder will ignore the initializing expression entirely. If you want the initializing expression to serve as default, add @Builder.Default. If it is not supposed to be settable during building, make the field final.
+    private Boolean isDeleted = false;
+                    ^
+D:\University\III Anno\Ingegneria del software\code_iterazioneV0\src\main\java\unicam\ids\HackHub\controller\HackathonController.java:42: error: cannot find symbol
+                return ResponseEntity.ok(hackathonService.getHackathons());
+                                                         ^
+  symbol:   method getHackathons()
+  location: variable hackathonService of type HackathonService
+D:\University\III Anno\Ingegneria del software\code_iterazioneV0\src\main\java\unicam\ids\HackHub\controller\HackathonController.java:45: error: cannot find symbol
+            return ResponseEntity.ok(hackathonService.getHackathonsPublic());
+                                                     ^
+  symbol:   method getHackathonsPublic()
+  location: variable hackathonService of type HackathonService
+D:\University\III Anno\Ingegneria del software\code_iterazioneV0\src\main\java\unicam\ids\HackHub\controller\HackathonController.java:70: error: cannot find symbol
+            hackathonService.createHackathon(authentication, createHackathonRequest);
+                            ^
+  symbol:   method createHackathon(Authentication,@jakarta.validation.Valid CreateHackathonRequest)
+  location: variable hackathonService of type HackathonService
+D:\University\III Anno\Ingegneria del software\code_iterazioneV0\src\main\java\unicam\ids\HackHub\controller\InviteController.java:39: error: cannot find symbol
+            inviteService.rejectOutsideInvite(rejectOutsideInviteRequest);
+                         ^
+  symbol:   method rejectOutsideInvite(@jakarta.validation.Valid RejectOutsideInviteRequest)
+  location: variable inviteService of type InviteService
+D:\University\III Anno\Ingegneria del software\code_iterazioneV0\src\main\java\unicam\ids\HackHub\controller\InviteController.java:53: error: cannot find symbol
+        InviteInsidePlatform invite = inviteService.inviteUserToTeam(insideInviteRequest);
+                                                   ^
+  symbol:   method inviteUserToTeam(@jakarta.validation.Valid InsideInviteRequest)
+  location: variable inviteService of type InviteService
+D:\University\III Anno\Ingegneria del software\code_iterazioneV0\src\main\java\unicam\ids\HackHub\controller\InviteController.java:63: error: cannot find symbol
+            inviteService.rejectTeamInvite(authentication, rejectInsideInviteRequest);
+                         ^
+  symbol:   method rejectTeamInvite(Authentication,RejectInsideInviteRequest)
+  location: variable inviteService of type InviteService
+D:\University\III Anno\Ingegneria del software\code_iterazioneV0\src\main\java\unicam\ids\HackHub\model\InviteInsidePlatform.java:84: error: cannot find symbol
+        InviteStateFactory.from(this.status).cancel(this);
+                                            ^
+  symbol:   method cancel(InviteInsidePlatform)
+  location: interface InviteStateBehavior
+D:\University\III Anno\Ingegneria del software\code_iterazioneV0\src\main\java\unicam\ids\HackHub\model\InviteInsidePlatform.java:89: error: cannot find symbol
+        return LocalDateTime.now().isAfter(expiresAt) && status == InviteState.PENDING;
+                                                                              ^
+  symbol:   variable PENDING
+  location: class InviteState
+D:\University\III Anno\Ingegneria del software\code_iterazioneV0\src\main\java\unicam\ids\HackHub\controller\SubmissionController.java:38: error: cannot find symbol
+            List<Submission> submissions = submissionService.getSubmissionsByStaffMember(authentication.getName());
+                                                            ^
+  symbol:   method getSubmissionsByStaffMember(String)
+  location: variable submissionService of type SubmissionService
+D:\University\III Anno\Ingegneria del software\code_iterazioneV0\src\main\java\unicam\ids\HackHub\controller\SubmissionController.java:55: error: cannot find symbol
+            submissionService.updateSubmission(updateTeamSubmissionRequest);
+                             ^
+  symbol:   method updateSubmission(@jakarta.validation.Valid UpdateTeamSubmissionRequest)
+  location: variable submissionService of type SubmissionService
+D:\University\III Anno\Ingegneria del software\code_iterazioneV0\src\main\java\unicam\ids\HackHub\controller\TeamController.java:28: error: cannot find symbol
+            teamService.createTeam(authentication, createTeamRequest);
+                       ^
+  symbol:   method createTeam(Authentication,@jakarta.validation.Valid CreateTeamRequest)
+  location: variable teamService of type TeamService
+D:\University\III Anno\Ingegneria del software\code_iterazioneV0\src\main\java\unicam\ids\HackHub\model\InviteOutsidePlatform.java:74: error: cannot find symbol
+        InviteStateFactory.from(this.status).cancel(this);
+                                            ^
+  symbol:   method cancel(InviteOutsidePlatform)
+  location: interface InviteStateBehavior
+D:\University\III Anno\Ingegneria del software\code_iterazioneV0\src\main\java\unicam\ids\HackHub\model\InviteOutsidePlatform.java:79: error: cannot find symbol
+        return LocalDateTime.now().isAfter(expiresAt) && status == InviteState.PENDING;
+                                                                              ^
+  symbol:   variable PENDING
+  location: class InviteState
+13 errors
+6 warnings
+
+> Task :compileJava FAILED
+
+[Incubating] Problems report is available at: file:///D:/University/III%20Anno/Ingegneria%20del%20software/code_iterazioneV0/build/reports/problems/problems-report.html
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':compileJava'.
+> Compilation failed; see the compiler output below.
+  D:\University\III Anno\Ingegneria del software\code_iterazioneV0\src\main\java\unicam\ids\HackHub\model\Hackathon.java:71: warning: @Builder will ignore the initializing expression entirely. If you want the initializing expression to serve as default, add @Builder.Default. If it is not supposed to be settable during building, make the field final.
+      private Set<User> mentors = new HashSet<>();
+                        ^
+  D:\University\III Anno\Ingegneria del software\code_iterazioneV0\src\main\java\unicam\ids\HackHub\model\Hackathon.java:74: warning: @Builder will ignore the initializing expression entirely. If you want the initializing expression to serve as default, add @Builder.Default. If it is not supposed to be settable during building, make the field final.
+      private Set<Team> teams = new HashSet<>();
+                        ^
+  D:\University\III Anno\Ingegneria del software\code_iterazioneV0\src\main\java\unicam\ids\HackHub\model\Team.java:39: warning: @Builder will ignore the initializing expression entirely. If you want the initializing expression to serve as default, add @Builder.Default. If it is not supposed to be settable during building, make the field final.
+      private List<User> members = new ArrayList<>();
+                         ^
+  D:\University\III Anno\Ingegneria del software\code_iterazioneV0\src\main\java\unicam\ids\HackHub\model\Team.java:43: warning: @Builder will ignore the initializing expression entirely. If you want the initializing expression to serve as default, add @Builder.Default. If it is not supposed to be settable during building, make the field final.
+      private List<User> mentors = new ArrayList<>();
+                         ^
+  D:\University\III Anno\Ingegneria del software\code_iterazioneV0\src\main\java\unicam\ids\HackHub\model\UserRole.java:28: warning: @Builder will ignore the initializing expression entirely. If you want the initializing expression to serve as default, add @Builder.Default. If it is not supposed to be settable during building, make the field final.
+      private Boolean isActive = true;
+                      ^
+  D:\University\III Anno\Ingegneria del software\code_iterazioneV0\src\main\java\unicam\ids\HackHub\model\User.java:65: warning: @Builder will ignore the initializing expression entirely. If you want the initializing expression to serve as default, add @Builder.Default. If it is not supposed to be settable during building, make the field final.
+      private Boolean isDeleted = false;
+                      ^
+  D:\University\III Anno\Ingegneria del software\code_iterazioneV0\src\main\java\unicam\ids\HackHub\controller\HackathonController.java:42: error: cannot find symbol
+                  return ResponseEntity.ok(hackathonService.getHackathons());
+                                                           ^
+    symbol:   method getHackathons()
+    location: variable hackathonService of type HackathonService
+  D:\University\III Anno\Ingegneria del software\code_iterazioneV0\src\main\java\unicam\ids\HackHub\controller\HackathonController.java:45: error: cannot find symbol
+              return ResponseEntity.ok(hackathonService.getHackathonsPublic());
+                                                       ^
+    symbol:   method getHackathonsPublic()
+    location: variable hackathonService of type HackathonService
+  D:\University\III Anno\Ingegneria del software\code_iterazioneV0\src\main\java\unicam\ids\HackHub\controller\HackathonController.java:70: error: cannot find symbol
+              hackathonService.createHackathon(authentication, createHackathonRequest);
+                              ^
+    symbol:   method createHackathon(Authentication,@jakarta.validation.Valid CreateHackathonRequest)
+    location: variable hackathonService of type HackathonService
+  D:\University\III Anno\Ingegneria del software\code_iterazioneV0\src\main\java\unicam\ids\HackHub\controller\InviteController.java:39: error: cannot find symbol
+              inviteService.rejectOutsideInvite(rejectOutsideInviteRequest);
+                           ^
+    symbol:   method rejectOutsideInvite(@jakarta.validation.Valid RejectOutsideInviteRequest)
+    location: variable inviteService of type InviteService
+  D:\University\III Anno\Ingegneria del software\code_iterazioneV0\src\main\java\unicam\ids\HackHub\controller\InviteController.java:53: error: cannot find symbol
+          InviteInsidePlatform invite = inviteService.inviteUserToTeam(insideInviteRequest);
+                                                     ^
+    symbol:   method inviteUserToTeam(@jakarta.validation.Valid InsideInviteRequest)
+    location: variable inviteService of type InviteService
+  D:\University\III Anno\Ingegneria del software\code_iterazioneV0\src\main\java\unicam\ids\HackHub\controller\InviteController.java:63: error: cannot find symbol
+              inviteService.rejectTeamInvite(authentication, rejectInsideInviteRequest);
+                           ^
+    symbol:   method rejectTeamInvite(Authentication,RejectInsideInviteRequest)
+    location: variable inviteService of type InviteService
+  D:\University\III Anno\Ingegneria del software\code_iterazioneV0\src\main\java\unicam\ids\HackHub\model\InviteInsidePlatform.java:84: error: cannot find symbol
+          InviteStateFactory.from(this.status).cancel(this);
+                                              ^
+    symbol:   method cancel(InviteInsidePlatform)
+    location: interface InviteStateBehavior
+  D:\University\III Anno\Ingegneria del software\code_iterazioneV0\src\main\java\unicam\ids\HackHub\model\InviteInsidePlatform.java:89: error: cannot find symbol
+          return LocalDateTime.now().isAfter(expiresAt) && status == InviteState.PENDING;
+                                                                                ^
+    symbol:   variable PENDING
+    location: class InviteState
+  D:\University\III Anno\Ingegneria del software\code_iterazioneV0\src\main\java\unicam\ids\HackHub\controller\SubmissionController.java:38: error: cannot find symbol
+              List<Submission> submissions = submissionService.getSubmissionsByStaffMember(authentication.getName());
+                                                              ^
+    symbol:   method getSubmissionsByStaffMember(String)
+    location: variable submissionService of type SubmissionService
+  D:\University\III Anno\Ingegneria del software\code_iterazioneV0\src\main\java\unicam\ids\HackHub\controller\SubmissionController.java:55: error: cannot find symbol
+              submissionService.updateSubmission(updateTeamSubmissionRequest);
+                               ^
+    symbol:   method updateSubmission(@jakarta.validation.Valid UpdateTeamSubmissionRequest)
+    location: variable submissionService of type SubmissionService
+  D:\University\III Anno\Ingegneria del software\code_iterazioneV0\src\main\java\unicam\ids\HackHub\controller\TeamController.java:28: error: cannot find symbol
+              teamService.createTeam(authentication, createTeamRequest);
+                         ^
+    symbol:   method createTeam(Authentication,@jakarta.validation.Valid CreateTeamRequest)
+    location: variable teamService of type TeamService
+  D:\University\III Anno\Ingegneria del software\code_iterazioneV0\src\main\java\unicam\ids\HackHub\model\InviteOutsidePlatform.java:74: error: cannot find symbol
+          InviteStateFactory.from(this.status).cancel(this);
+                                              ^
+    symbol:   method cancel(InviteOutsidePlatform)
+    location: interface InviteStateBehavior
+  D:\University\III Anno\Ingegneria del software\code_iterazioneV0\src\main\java\unicam\ids\HackHub\model\InviteOutsidePlatform.java:79: error: cannot find symbol
+          return LocalDateTime.now().isAfter(expiresAt) && status == InviteState.PENDING;
+                                                                                ^
+    symbol:   variable PENDING
+    location: class InviteState
+  13 errors
+  6 warnings
+
+* Try:
+> Check your code and dependencies to fix the compilation error(s)
+> Run with --scan to get full insights.
+
+BUILD FAILED in 6s
+2 actionable tasks: 1 executed, 1 up-to-date
+Configuration cache entry stored.

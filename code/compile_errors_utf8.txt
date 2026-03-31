@@ -1,0 +1,28 @@
+Reusing configuration cache.
+
+> Task :compileJava
+D:\University\III Anno\Ingegneria del software\code_iterazioneV0\src\main\java\unicam\ids\HackHub\model\UserRole.java:28: warning: @Builder will ignore the initializing expression entirely. If you want the initializing expression to serve as default, add @Builder.Default. If it is not supposed to be settable during building, make the field final.
+    private Boolean isActive = true;
+                    ^
+D:\University\III Anno\Ingegneria del software\code_iterazioneV0\src\main\java\unicam\ids\HackHub\model\Team.java:39: warning: @Builder will ignore the initializing expression entirely. If you want the initializing expression to serve as default, add @Builder.Default. If it is not supposed to be settable during building, make the field final.
+    private List<User> members = new ArrayList<>();
+                       ^
+D:\University\III Anno\Ingegneria del software\code_iterazioneV0\src\main\java\unicam\ids\HackHub\model\Team.java:43: warning: @Builder will ignore the initializing expression entirely. If you want the initializing expression to serve as default, add @Builder.Default. If it is not supposed to be settable during building, make the field final.
+    private List<User> mentors = new ArrayList<>();
+                       ^
+D:\University\III Anno\Ingegneria del software\code_iterazioneV0\src\main\java\unicam\ids\HackHub\model\User.java:65: warning: @Builder will ignore the initializing expression entirely. If you want the initializing expression to serve as default, add @Builder.Default. If it is not supposed to be settable during building, make the field final.
+    private Boolean isDeleted = false;
+                    ^
+D:\University\III Anno\Ingegneria del software\code_iterazioneV0\src\main\java\unicam\ids\HackHub\model\Hackathon.java:71: warning: @Builder will ignore the initializing expression entirely. If you want the initializing expression to serve as default, add @Builder.Default. If it is not supposed to be settable during building, make the field final.
+    private Set<User> mentors = new HashSet<>();
+                      ^
+D:\University\III Anno\Ingegneria del software\code_iterazioneV0\src\main\java\unicam\ids\HackHub\model\Hackathon.java:74: warning: @Builder will ignore the initializing expression entirely. If you want the initializing expression to serve as default, add @Builder.Default. If it is not supposed to be settable during building, make the field final.
+    private Set<Team> teams = new HashSet<>();
+                      ^
+6 warnings
+
+[Incubating] Problems report is available at: file:///D:/University/III%20Anno/Ingegneria%20del%20software/code_iterazioneV0/build/reports/problems/problems-report.html
+
+BUILD SUCCESSFUL in 5s
+1 actionable task: 1 executed
+Configuration cache entry reused.

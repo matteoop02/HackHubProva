@@ -4,27 +4,26 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.*;
-import org.hibernate.annotations.ColumnDefault;
 
 @Getter
 @Setter
-@Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 @Entity
 @Table(name = "USER_ROLES")
 public class UserRole {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "Id", nullable = false)
     private Long id;
 
     @Size(max = 255)
-    @Column(name = "Name", nullable = false)
+    @NotNull
+    @Column(name = "Name", nullable = false, unique = true)
     private String name;
 
-    @NotNull
-    @ColumnDefault("TRUE")
     @Column(name = "IsActive", nullable = false)
     private Boolean isActive = true;
 }
