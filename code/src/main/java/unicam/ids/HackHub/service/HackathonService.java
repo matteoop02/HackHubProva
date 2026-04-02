@@ -72,4 +72,28 @@ public class HackathonService {
                 .organizerName(hackathon.getOrganizer() != null ? hackathon.getOrganizer().getName() + " " + hackathon.getOrganizer().getSurname() : "N/A")
                 .build();
     }
+
+    public void startHackathon(Authentication authentication, Long id) {
+        Hackathon hackathon = hackathonRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Hackathon non trovato"));
+        
+        if (!hackathon.getOrganizer().getUsername().equals(authentication.getName())) {
+            throw new unicam.ids.HackHub.exceptions.UnauthorizedAccessException("Solo l'organizzatore può avviare l'hackathon");
+        }
+        
+        hackathon.start();
+        hackathonRepository.save(hackathon);
+    }
+
+    public void closeHackathonSubscriptions(Authentication authentication, Long id) {
+        Hackathon hackathon = hackathonRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Hackathon non trovato"));
+        
+        if (!hackathon.getOrganizer().getUsername().equals(authentication.getName())) {
+            throw new unicam.ids.HackHub.exceptions.UnauthorizedAccessException("Solo l'organizzatore può chiudere le iscrizioni");
+        }
+        
+        hackathon.closeSubscriptions();
+        hackathonRepository.save(hackathon);
+    }
 }

@@ -10,6 +10,5 @@ public record CreateTeamRequest(
         @NotNull(message = "Specificare se il team sarà Pubblico (true) o Privato (false)")
         boolean isPublic,
 
-        @NotNull(message = "L'ID dell'hackathon è obbligatorio")
         Long hackathonId
 ) {}

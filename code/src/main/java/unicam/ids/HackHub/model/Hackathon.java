@@ -64,13 +64,22 @@ public class Hackathon {
     @JoinColumn(name = "TeamWinner_Id")
     private Team teamWinner;
 
+    @Builder.Default
     @ManyToMany
     @JoinTable(name = "HACKATHON_MENTORS",
             joinColumns = @JoinColumn(name = "HackathonId"),
             inverseJoinColumns = @JoinColumn(name = "UserId"))
     private Set<User> mentors = new HashSet<>();
 
+    @Builder.Default
     @OneToMany(mappedBy = "hackathon", cascade = CascadeType.ALL)
     private Set<Team> teams = new HashSet<>();
 
+    public void start() {
+        unicam.ids.HackHub.factory.HackathonStateFactory.from(this.state).start(this);
+    }
+
+    public void closeSubscriptions() {
+        unicam.ids.HackHub.factory.HackathonStateFactory.from(this.state).closeSubscriptions(this);
+    }
 }
