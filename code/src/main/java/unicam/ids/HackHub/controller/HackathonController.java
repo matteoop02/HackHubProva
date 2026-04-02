@@ -60,4 +60,22 @@ public class HackathonController {
         hackathonService.createHackathon(authentication, createHackathonRequest);
         return ResponseEntity.ok("Hackathon creato con successo");
     }
+
+    @PostMapping("/{id}/start")
+    @Operation(summary = "Avvia Hackathon", description = "Permette all'organizzatore di avviare l'hackathon (passando allo stato IN_CORSO)")
+    @ApiResponse(responseCode = "200", description = "Hackathon avviato")
+    @ApiResponse(responseCode = "400", description = "Errore nell'avvio")
+    public ResponseEntity<String> startHackathon(Authentication authentication, @PathVariable Long id) {
+        hackathonService.startHackathon(authentication, id);
+        return ResponseEntity.ok("Hackathon avviato con successo");
+    }
+
+    @PostMapping("/{id}/closeSubscriptions")
+    @Operation(summary = "Termina iscrizioni Hackathon", description = "Permette all'organizzatore di terminare le iscrizioni (passando allo stato IN_CORSO)")
+    @ApiResponse(responseCode = "200", description = "Iscrizioni terminate")
+    @ApiResponse(responseCode = "400", description = "Errore nella chiusura")
+    public ResponseEntity<String> closeSubscriptions(Authentication authentication, @PathVariable Long id) {
+        hackathonService.closeHackathonSubscriptions(authentication, id);
+        return ResponseEntity.ok("Iscrizioni terminate con successo");
+    }
 }

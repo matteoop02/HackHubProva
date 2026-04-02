@@ -35,8 +35,11 @@ public class TeamService {
         User creator = userRepository.findByUsernameAndIsDeletedFalse(authentication.getName())
                 .orElseThrow(() -> new ResourceNotFoundException("Utente non trovato o eliminato"));
 
-        Hackathon hackathon = hackathonRepository.findById(request.hackathonId())
-                .orElseThrow(() -> new ResourceNotFoundException("Hackathon non trovato"));
+        Hackathon hackathon = null;
+        if (request.hackathonId() != null) {
+            hackathon = hackathonRepository.findById(request.hackathonId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Hackathon non trovato"));
+        }
 
         Team team = Team.builder()
                 .name(request.name())
@@ -78,5 +81,35 @@ public class TeamService {
                 .leaderId(team.getTeamLeader() != null ? team.getTeamLeader().getId() : null)
                 .memberIds(team.getMembers().stream().map(User::getId).collect(Collectors.toList()))
                 .build();
+    }
+
+    public void subscribeTeamToHackathon(Authentication authentication, Long teamId, Long hackathonId) {
+        User user = userRepository.findByUsernameAndIsDeletedFalse(authentication.getName())
+                .orElseThrow(() -> new ResourceNotFoundException("Utente non trovato o eliminato"));
+
+        Team team = teamRepository.findById(teamId)
+                .orElseThrow(() -> new ResourceNotFoundException("Team non trovato"));
+
+        if (!team.getTeamLeader().getId().equals(user.getId())) {
+            throw new BusinessLogicException("Solo il leader può iscrivere il team a un hackathon");
+        }
+
+        if (team.getHackathon() != null) {
+            throw new BusinessLogicException("Il team è già iscritto a un hackathon");
+        }
+
+        Hackathon hackathon = hackathonRepository.findById(hackathonId)
+                .orElseThrow(() -> new ResourceNotFoundException("Hackathon non trovato"));
+
+        if (hackathon.getState() != unicam.ids.HackHub.enums.HackathonState.IN_ISCRIZIONE) {
+            throw new BusinessLogicException("L'hackathon non accetta più iscrizioni");
+        }
+
+        if (team.getMembers().size() > hackathon.getMaxTeamSize()) {
+            throw new BusinessLogicException("Il team supera il numero massimo di membri consentito per questo hackathon");
+        }
+
+        team.setHackathon(hackathon);
+        teamRepository.save(team);
     }
 }

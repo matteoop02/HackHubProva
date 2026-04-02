@@ -37,4 +37,13 @@ public class TeamController {
         teamService.leaveTeam(authentication);
         return ResponseEntity.ok("Hai lasciato il team con successo");
     }
+
+    @PostMapping("/{teamId}/subscribe/{hackathonId}")
+    @Operation(summary = "Iscrizione team a Hackathon", description = "Permette al leader di un team di iscrivere il suo team a un hackathon")
+    @ApiResponse(responseCode = "200", description = "Team iscritto con successo")
+    @ApiResponse(responseCode = "400", description = "Errore durante l'iscrizione")
+    public ResponseEntity<String> subscribeTeam(Authentication authentication, @PathVariable Long teamId, @PathVariable Long hackathonId) {
+        teamService.subscribeTeamToHackathon(authentication, teamId, hackathonId);
+        return ResponseEntity.ok("Team iscritto con successo all'hackathon");
+    }
 }
