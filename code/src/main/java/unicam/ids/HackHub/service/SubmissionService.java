@@ -54,6 +54,29 @@ public class SubmissionService {
         submissionRepository.save(submission);
     }
 
+    public void evaluateSubmission(org.springframework.security.core.Authentication authentication, unicam.ids.HackHub.dto.requests.submission.EvaluateSubmissionRequest request) {
+        User evaluator = userRepository.findByUsernameAndIsDeletedFalse(authentication.getName())
+                .orElseThrow(() -> new ResourceNotFoundException("Utente non trovato"));
+
+        if (!"GIUDICE".equals(evaluator.getRole().getName())) {
+            throw new UnauthorizedAccessException("Solo i giudici possono valutare le sottomissioni");
+        }
+
+        Submission submission = submissionRepository.findById(request.submissionId())
+                .orElseThrow(() -> new ResourceNotFoundException("Sottomissione non trovata"));
+
+        if (submission.getHackathon() == null || submission.getHackathon().getJudge() == null || 
+            !submission.getHackathon().getJudge().getId().equals(evaluator.getId())) {
+            throw new UnauthorizedAccessException("Non sei il giudice di questo hackathon");
+        }
+
+        submission.setScore(request.score());
+        submission.setComment(request.comment());
+        submission.setState(unicam.ids.HackHub.enums.SubmissionState.VALUTATA);
+        
+        submissionRepository.save(submission);
+    }
+
     private SubmissionResponse mapToResponse(Submission submission) {
         return SubmissionResponse.builder()
                 .id(submission.getId())

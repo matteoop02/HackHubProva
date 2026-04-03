@@ -59,4 +59,14 @@ public class InviteController {
         inviteService.rejectTeamInvite(authentication, rejectInsideInviteRequest);
         return ResponseEntity.ok("Invito rifiutato con successo!");
     }
+
+    @PostMapping("/outside/create")
+    @Operation(summary = "Invita utente esterno", description = "Invia un invito via email a un utente esterno alla piattaforma.")
+    @ApiResponse(responseCode = "200", description = "Invito creato e mail inviata")
+    @ApiResponse(responseCode = "400", description = "Errore nella richiesta")
+    public ResponseEntity<String> createOutsideInvite(Authentication authentication, 
+            @RequestBody @Valid CreateOutsideInviteRequest request) {
+        inviteService.createOutsideInvite(authentication, request);
+        return ResponseEntity.ok("Invito inviato con successo!");
+    }
 }

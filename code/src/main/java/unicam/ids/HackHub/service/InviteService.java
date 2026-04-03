@@ -27,15 +27,18 @@ public class InviteService {
     private final OutsideInviteRepository outsideInviteRepository;
     private final UserRepository userRepository;
     private final UserRoleRepository userRoleRepository;
+    private final EmailService emailService;
 
     public InviteService(InsideInviteRepository insideInviteRepository, 
                          OutsideInviteRepository outsideInviteRepository,
                          UserRepository userRepository,
-                         UserRoleRepository userRoleRepository) {
+                         UserRoleRepository userRoleRepository,
+                         EmailService emailService) {
         this.insideInviteRepository = insideInviteRepository;
         this.outsideInviteRepository = outsideInviteRepository;
         this.userRepository = userRepository;
         this.userRoleRepository = userRoleRepository;
+        this.emailService = emailService;
     }
 
     public void rejectOutsideInvite(RejectOutsideInviteRequest request) {
@@ -95,5 +98,31 @@ public class InviteService {
         
         invite.reject();
         insideInviteRepository.save(invite);
+    }
+
+    public void createOutsideInvite(Authentication authentication, unicam.ids.HackHub.dto.requests.invite.CreateOutsideInviteRequest request) {
+        User sender = userRepository.findByUsernameAndIsDeletedFalse(authentication.getName())
+                .orElseThrow(() -> new ResourceNotFoundException("Mittente non trovato"));
+
+        String token = java.util.UUID.randomUUID().toString();
+
+        InviteOutsidePlatform invite = InviteOutsidePlatform.builder()
+                .senderUser(sender)
+                .recipientEmail(request.recipientEmail())
+                .inviteToken(token)
+                .message(request.message())
+                .status(InviteState.IN_ATTESA)
+                .expiresAt(java.time.LocalDateTime.now().plusDays(7))
+                .build();
+        
+        outsideInviteRepository.save(invite);
+        
+        String emailBody = "Sei stato invitato da " + sender.getName() + " " + sender.getSurname() + " a iscriverti alla piattaforma HackHub.\n\n";
+        if (request.message() != null && !request.message().isBlank()) {
+            emailBody += "Messaggio: " + request.message() + "\n\n";
+        }
+        emailBody += "Usa questo token per registrarti: " + token;
+        
+        emailService.sendEmail(request.recipientEmail(), "Invito a iscriverti ad HackHub", emailBody);
     }
 }

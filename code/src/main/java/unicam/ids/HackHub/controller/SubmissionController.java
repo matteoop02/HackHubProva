@@ -49,4 +49,14 @@ public class SubmissionController {
         submissionService.updateSubmission(updateTeamSubmissionRequest);
         return ResponseEntity.ok("Sottomissione aggiornata con successo");
     }
+
+    @PostMapping("/staff/evaluate")
+    @Operation(summary = "Valuta sottomissione (Giudice)", description = "Permette al giudice dell'hackathon di valutare una sottomissione assegnando score e commento.")
+    @ApiResponse(responseCode = "200", description = "Sottomissione valutata con successo")
+    @ApiResponse(responseCode = "400", description = "Errore nella valutazione")
+    public ResponseEntity<String> evaluateSubmission(Authentication authentication, 
+            @Valid @RequestBody EvaluateSubmissionRequest request) {
+        submissionService.evaluateSubmission(authentication, request);
+        return ResponseEntity.ok("Sottomissione valutata con successo");
+    }
 }
