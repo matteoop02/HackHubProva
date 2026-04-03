@@ -46,4 +46,15 @@ public class TeamController {
         teamService.subscribeTeamToHackathon(authentication, teamId, hackathonId);
         return ResponseEntity.ok("Team iscritto con successo all'hackathon");
     }
+
+    @PostMapping("/{teamId}/violation/report")
+    @Operation(summary = "Segnala Violazione Team", description = "Permette a un mentore di segnalare una violazione da parte del team all'organizzatore.")
+    @ApiResponse(responseCode = "200", description = "Segnalazione inviata con successo")
+    @ApiResponse(responseCode = "400", description = "Errore nella segnalazione")
+    public ResponseEntity<String> reportViolation(Authentication authentication, 
+            @PathVariable Long teamId, 
+            @Valid @RequestBody unicam.ids.HackHub.dto.requests.team.ReportViolationRequest request) {
+        teamService.reportViolation(authentication, teamId, request);
+        return ResponseEntity.ok("Violazione segnalata con successo all'organizzatore");
+    }
 }

@@ -23,12 +23,18 @@ public class TeamService {
     private final TeamRepository teamRepository;
     private final UserRepository userRepository;
     private final HackathonRepository hackathonRepository;
+    private final unicam.ids.HackHub.repository.RuleViolationRepository ruleViolationRepository;
+    private final EmailService emailService;
 
     public TeamService(TeamRepository teamRepository, UserRepository userRepository,
-            HackathonRepository hackathonRepository) {
+            HackathonRepository hackathonRepository,
+            unicam.ids.HackHub.repository.RuleViolationRepository ruleViolationRepository,
+            EmailService emailService) {
         this.teamRepository = teamRepository;
         this.userRepository = userRepository;
         this.hackathonRepository = hackathonRepository;
+        this.ruleViolationRepository = ruleViolationRepository;
+        this.emailService = emailService;
     }
 
     public TeamResponse createTeam(Authentication authentication, CreateTeamRequest request) {
@@ -111,5 +117,45 @@ public class TeamService {
 
         team.setHackathon(hackathon);
         teamRepository.save(team);
+    }
+
+    public void reportViolation(org.springframework.security.core.Authentication authentication, Long teamId, unicam.ids.HackHub.dto.requests.team.ReportViolationRequest request) {
+        User mentor = userRepository.findByUsernameAndIsDeletedFalse(authentication.getName())
+                .orElseThrow(() -> new ResourceNotFoundException("Utente non trovato o eliminato"));
+
+        if (!"MENTOR".equals(mentor.getRole().getName())) {
+            throw new unicam.ids.HackHub.exceptions.UnauthorizedAccessException("Solo i mentori possono segnalare violazioni");
+        }
+
+        Team team = teamRepository.findById(teamId)
+                .orElseThrow(() -> new ResourceNotFoundException("Team non trovato"));
+
+        if (team.getHackathon() == null) {
+            throw new BusinessLogicException("Questo team non è iscritto a nessun hackathon");
+        }
+
+        boolean isMentorOfTeam = team.getMentors().stream().anyMatch(m -> m.getId().equals(mentor.getId()));
+        boolean isMentorOfHackathon = team.getHackathon().getMentors().stream().anyMatch(m -> m.getId().equals(mentor.getId()));
+
+        if (!isMentorOfTeam && !isMentorOfHackathon) {
+            throw new unicam.ids.HackHub.exceptions.UnauthorizedAccessException("Non sei assegnato come mentore per questo team o hackathon");
+        }
+
+        unicam.ids.HackHub.model.RuleViolationReport violation = unicam.ids.HackHub.model.RuleViolationReport.builder()
+                .team(team)
+                .mentor(mentor)
+                .description(request.description())
+                .createdAt(java.time.LocalDateTime.now())
+                .build();
+        
+        ruleViolationRepository.save(violation);
+
+        User organizer = team.getHackathon().getOrganizer();
+        String emailBody = "Il mentore " + mentor.getName() + " " + mentor.getSurname() + 
+                " ha segnalato una violazione delle regole da parte del team '" + team.getName() + 
+                "' nell'hackathon '" + team.getHackathon().getName() + "'.\n" +
+                "Descrizione: " + request.description();
+
+        emailService.sendEmail(organizer.getEmail(), "Segnalazione Violazione Regole - Team " + team.getName(), emailBody);
     }
 }
