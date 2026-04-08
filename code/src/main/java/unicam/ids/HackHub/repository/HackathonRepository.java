@@ -13,4 +13,6 @@ import java.util.Optional;
 
 public interface HackathonRepository extends JpaRepository<Hackathon, Long> {
     List<Hackathon> findAllByIsPublic(Boolean isPublic);
+
+    Optional<Hackathon> findByName(String name);
 }

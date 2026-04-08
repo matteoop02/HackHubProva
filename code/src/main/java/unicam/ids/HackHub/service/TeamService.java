@@ -15,6 +15,7 @@ import unicam.ids.HackHub.repository.UserRepository;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -45,6 +46,11 @@ public class TeamService {
         if (request.hackathonId() != null) {
             hackathon = hackathonRepository.findById(request.hackathonId())
                     .orElseThrow(() -> new ResourceNotFoundException("Hackathon non trovato"));
+        }
+
+        Optional<Team> teamOptional = teamRepository.findByName(request.name());
+        if(teamOptional.isPresent()) {
+            throw new IllegalArgumentException("Nome team già esistente");
         }
 
         Team team = Team.builder()

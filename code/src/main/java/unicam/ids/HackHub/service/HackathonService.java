@@ -12,6 +12,7 @@ import unicam.ids.HackHub.repository.UserRepository;
 import unicam.ids.HackHub.dto.responses.HackathonResponse;
 import unicam.ids.HackHub.exceptions.ResourceNotFoundException;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -36,6 +37,10 @@ public class HackathonService {
     }
 
     public HackathonResponse createHackathon(Authentication authentication, CreateHackathonRequest request) {
+        Optional<Hackathon> hackathonOptional = hackathonRepository.findByName(request.name());
+        if(hackathonOptional.isEmpty()) {
+            throw new IllegalArgumentException("Hakcathon con il nome scelto già esistente");
+        }
         User organizer = userRepository.findByUsernameAndIsDeletedFalse(authentication.getName())
                 .orElseThrow(() -> new ResourceNotFoundException("Utente non trovato o eliminato"));
 
