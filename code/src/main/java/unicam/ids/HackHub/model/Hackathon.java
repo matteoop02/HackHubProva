@@ -82,4 +82,9 @@ public class Hackathon {
     public void closeSubscriptions() {
         unicam.ids.HackHub.factory.HackathonStateFactory.from(this.state).closeSubscriptions(this);
     }
+
+    public void declareWinner(Team winner) {
+        this.teamWinner = winner;
+        this.state = HackathonState.CONCLUSO;
+    }
 }

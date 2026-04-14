@@ -24,6 +24,7 @@ public class UserRole {
     @Column(name = "Name", nullable = false, unique = true)
     private String name;
 
+    @Builder.Default
     @Column(name = "IsActive", nullable = false)
     private Boolean isActive = true;
 }

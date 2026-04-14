@@ -42,6 +42,22 @@ public class SubmissionController {
      */
     @PostMapping("/team/update")
     @Operation(summary = "Aggiorna sottomissione team", description = "Permette di aggiornare una sottomissione già esistente per il team.")
+    @RequestBody(
+            required = true,
+            content = @Content(
+                    mediaType = "application/json",
+                    examples = @ExampleObject(
+                            name = "Aggiornamento Submission",
+                            value = """
+                                    {
+                                      "submissionId": 1,
+                                      "title": "Smart Mobility Platform",
+                                      "content": "Abbiamo aggiornato il prototipo con dashboard, API REST e deployment su cloud."
+                                    }
+                                    """
+                    )
+            )
+    )
     @ApiResponse(responseCode = "200", description = "Sottomissione aggiornata con successo")
     @ApiResponse(responseCode = "400", description = "Errore nella richiesta")
     public ResponseEntity<String> updateSubmission(
@@ -52,6 +68,22 @@ public class SubmissionController {
 
     @PostMapping("/staff/evaluate")
     @Operation(summary = "Valuta sottomissione (Giudice)", description = "Permette al giudice dell'hackathon di valutare una sottomissione assegnando score e commento.")
+    @RequestBody(
+            required = true,
+            content = @Content(
+                    mediaType = "application/json",
+                    examples = @ExampleObject(
+                            name = "Valutazione Submission",
+                            value = """
+                                    {
+                                      "submissionId": 1,
+                                      "score": 8.5,
+                                      "comment": "Progetto solido, buona presentazione e architettura chiara."
+                                    }
+                                    """
+                    )
+            )
+    )
     @ApiResponse(responseCode = "200", description = "Sottomissione valutata con successo")
     @ApiResponse(responseCode = "400", description = "Errore nella valutazione")
     public ResponseEntity<String> evaluateSubmission(Authentication authentication, 

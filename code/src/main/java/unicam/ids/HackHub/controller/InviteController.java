@@ -40,6 +40,22 @@ public class InviteController {
 
     @PostMapping("/leaderDelTeam/inviteToTeam")
     @Operation(summary = "Invita un utente al team", description = "Permette al leader di un team di invitare un utente già registrato a unirsi al team.")
+    @RequestBody(
+            required = true,
+            content = @Content(
+                    mediaType = "application/json",
+                    examples = @ExampleObject(
+                            name = "Invito Interno",
+                            value = """
+                                    {
+                                      "recipientId": 2,
+                                      "proposedRoleId": 1,
+                                      "message": "Ti invitiamo a unirti al nostro team per l'hackathon."
+                                    }
+                                    """
+                    )
+            )
+    )
     @ApiResponse(responseCode = "201", description = "Invito al team creato con successo")
     @ApiResponse(responseCode = "400", description = "Errore nella richiesta o utente non valido")
     public ResponseEntity<InviteResponse> inviteToTeam(
@@ -52,6 +68,20 @@ public class InviteController {
 
     @PostMapping("/inviteManage/rejectTeamInvite")
     @Operation(summary = "Rifiuta invito al team", description = "Permette a un utente autenticato di rifiutare un invito ricevuto per entrare in un team.")
+    @RequestBody(
+            required = true,
+            content = @Content(
+                    mediaType = "application/json",
+                    examples = @ExampleObject(
+                            name = "Rifiuto Invito Team",
+                            value = """
+                                    {
+                                      "inviteId": 1
+                                    }
+                                    """
+                    )
+            )
+    )
     @ApiResponse(responseCode = "200", description = "Invito rifiutato con successo")
     @ApiResponse(responseCode = "400", description = "Errore durante il rifiuto dell'invito")
     public ResponseEntity<String> rejectTeamInvite(Authentication authentication, 
@@ -62,6 +92,21 @@ public class InviteController {
 
     @PostMapping("/outside/create")
     @Operation(summary = "Invita utente esterno", description = "Invia un invito via email a un utente esterno alla piattaforma.")
+    @RequestBody(
+            required = true,
+            content = @Content(
+                    mediaType = "application/json",
+                    examples = @ExampleObject(
+                            name = "Invito Esterno",
+                            value = """
+                                    {
+                                      "recipientEmail": "nuovo.utente@example.com",
+                                      "message": "Vorremmo invitarti a registrarti su HackHub e collaborare con noi."
+                                    }
+                                    """
+                    )
+            )
+    )
     @ApiResponse(responseCode = "200", description = "Invito creato e mail inviata")
     @ApiResponse(responseCode = "400", description = "Errore nella richiesta")
     public ResponseEntity<String> createOutsideInvite(Authentication authentication, 

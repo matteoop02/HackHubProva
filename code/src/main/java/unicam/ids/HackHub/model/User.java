@@ -59,6 +59,7 @@ public class User {
     @JoinColumn(name = "TeamId", nullable = true)
     private Team team;
 
+    @Builder.Default
     @NotNull
     @ColumnDefault("FALSE")
     @Column(name = "IS_DELETED", nullable = false)

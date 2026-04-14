@@ -17,5 +17,7 @@ public record HackathonResponse(
         Integer maxTeamSize,
         boolean isPublic,
         HackathonState state,
-        String organizerName
+        String organizerName,
+        Long winningTeamId,
+        String winningTeamName
 ) {}

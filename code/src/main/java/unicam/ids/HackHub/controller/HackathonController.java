@@ -10,9 +10,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import unicam.ids.HackHub.dto.requests.DeclareWinningTeamRequest;
 import unicam.ids.HackHub.dto.requests.hackathon.CreateHackathonRequest;
 import unicam.ids.HackHub.dto.responses.HackathonResponse;
-import unicam.ids.HackHub.service.HackathonService;
+import unicam.ids.HackHub.service.HackathonManagementService;
 
 import java.util.List;
 
@@ -22,7 +23,7 @@ import java.util.List;
 @Tag(name = "Hackathon", description = "Gestione degli hackathon")
 public class HackathonController {
 
-    private final HackathonService hackathonService;
+    private final HackathonManagementService hackathonService;
 
     // --------------------------------- GET VARI ---------------------------------
 
@@ -77,5 +78,29 @@ public class HackathonController {
     public ResponseEntity<String> closeSubscriptions(Authentication authentication, @PathVariable Long id) {
         hackathonService.closeHackathonSubscriptions(authentication, id);
         return ResponseEntity.ok("Iscrizioni terminate con successo");
+    }
+
+    @PostMapping("/{id}/winner")
+    @Operation(summary = "Proclama team vincitore", description = "Permette all'organizzatore di proclamare il team vincitore.")
+    @io.swagger.v3.oas.annotations.parameters.RequestBody(
+            required = true,
+            content = @Content(
+                    mediaType = "application/json",
+                    examples = @ExampleObject(
+                            name = "Team Vincitore",
+                            value = """
+                                    {
+                                      "teamId": 1
+                                    }
+                                    """
+                    )
+            )
+    )
+    @ApiResponse(responseCode = "200", description = "Team vincitore proclamato con successo")
+    @ApiResponse(responseCode = "400", description = "Errore nella proclamazione")
+    public ResponseEntity<HackathonResponse> declareWinningTeam(Authentication authentication,
+            @PathVariable Long id,
+            @RequestBody @Valid DeclareWinningTeamRequest request) {
+        return ResponseEntity.ok(hackathonService.declareWinningTeam(authentication, id, request));
     }
 }

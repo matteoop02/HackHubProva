@@ -42,6 +42,10 @@ public class TeamService {
         User creator = userRepository.findByUsernameAndIsDeletedFalse(authentication.getName())
                 .orElseThrow(() -> new ResourceNotFoundException("Utente non trovato o eliminato"));
 
+        if (creator.getTeam() != null) {
+            throw new BusinessLogicException("L'utente appartiene gia' a un team");
+        }
+
         Hackathon hackathon = null;
         if (request.hackathonId() != null) {
             hackathon = hackathonRepository.findById(request.hackathonId())
@@ -61,7 +65,16 @@ public class TeamService {
                 .members(new ArrayList<>(List.of(creator)))
                 .build();
 
-        return mapToResponse(teamRepository.save(team));
+        Team savedTeam = teamRepository.save(team);
+        creator.setTeam(savedTeam);
+        userRepository.save(creator);
+
+        if (hackathon != null) {
+            hackathon.getTeams().add(savedTeam);
+            hackathonRepository.save(hackathon);
+        }
+
+        return mapToResponse(savedTeam);
     }
 
     public void leaveTeam(Authentication authentication) {
@@ -92,6 +105,7 @@ public class TeamService {
                 .hackathonId(team.getHackathon() != null ? team.getHackathon().getId() : null)
                 .leaderId(team.getTeamLeader() != null ? team.getTeamLeader().getId() : null)
                 .memberIds(team.getMembers().stream().map(User::getId).collect(Collectors.toList()))
+                .mentorIds(team.getMentors().stream().map(User::getId).collect(Collectors.toList()))
                 .build();
     }
 
@@ -122,7 +136,9 @@ public class TeamService {
         }
 
         team.setHackathon(hackathon);
+        hackathon.getTeams().add(team);
         teamRepository.save(team);
+        hackathonRepository.save(hackathon);
     }
 
     public void reportViolation(org.springframework.security.core.Authentication authentication, Long teamId, unicam.ids.HackHub.dto.requests.team.ReportViolationRequest request) {

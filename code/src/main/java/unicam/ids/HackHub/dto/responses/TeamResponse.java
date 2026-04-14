@@ -10,5 +10,6 @@ public record TeamResponse(
         boolean isPublic,
         Long hackathonId,
         Long leaderId,
-        List<Long> memberIds
+        List<Long> memberIds,
+        List<Long> mentorIds
 ) {}

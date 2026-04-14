@@ -16,19 +16,19 @@ import unicam.ids.HackHub.repository.HackathonRepository;
 import unicam.ids.HackHub.repository.TeamRepository;
 import unicam.ids.HackHub.repository.UserRepository;
 import unicam.ids.HackHub.util.RoleNames;
+
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
-public class HackathonService {
+public class HackathonManagementService {
 
     private final HackathonRepository hackathonRepository;
     private final UserRepository userRepository;
     private final TeamRepository teamRepository;
     private final EmailService emailService;
 
-    public HackathonService(HackathonRepository hackathonRepository, UserRepository userRepository,
+    public HackathonManagementService(HackathonRepository hackathonRepository, UserRepository userRepository,
             TeamRepository teamRepository, EmailService emailService) {
         this.hackathonRepository = hackathonRepository;
         this.userRepository = userRepository;
@@ -37,9 +37,9 @@ public class HackathonService {
     }
 
     public List<HackathonResponse> getHackathons(boolean isAuthenticated) {
-        List<Hackathon> hackathons = isAuthenticated ? 
-            hackathonRepository.findAll() : 
-            hackathonRepository.findAllByIsPublic(true);
+        List<Hackathon> hackathons = isAuthenticated
+                ? hackathonRepository.findAll()
+                : hackathonRepository.findAllByIsPublic(true);
 
         return hackathons.stream()
                 .map(this::mapToResponse)
@@ -47,12 +47,16 @@ public class HackathonService {
     }
 
     public HackathonResponse createHackathon(Authentication authentication, CreateHackathonRequest request) {
-        Optional<Hackathon> hackathonOptional = hackathonRepository.findByName(request.name());
-        if(hackathonOptional.isEmpty()) {
-            throw new IllegalArgumentException("Hakcathon con il nome scelto già esistente");
+        if (hackathonRepository.findByName(request.name()).isPresent()) {
+            throw new BusinessLogicException("Hackathon con il nome scelto gia' esistente");
         }
+
         User organizer = userRepository.findByUsernameAndIsDeletedFalse(authentication.getName())
                 .orElseThrow(() -> new ResourceNotFoundException("Utente non trovato o eliminato"));
+
+        if (!RoleNames.ORGANIZER.equals(organizer.getRole().getName())) {
+            throw new UnauthorizedAccessException("Solo un organizzatore puo' creare un hackathon");
+        }
 
         Hackathon hackathon = Hackathon.builder()
                 .name(request.name())
@@ -71,6 +75,52 @@ public class HackathonService {
         return mapToResponse(hackathonRepository.save(hackathon));
     }
 
+    public void startHackathon(Authentication authentication, Long id) {
+        Hackathon hackathon = getManagedHackathon(authentication, id);
+        hackathon.start();
+        hackathonRepository.save(hackathon);
+    }
+
+    public void closeHackathonSubscriptions(Authentication authentication, Long id) {
+        Hackathon hackathon = getManagedHackathon(authentication, id);
+        hackathon.closeSubscriptions();
+        hackathonRepository.save(hackathon);
+    }
+
+    public HackathonResponse declareWinningTeam(Authentication authentication, Long hackathonId,
+            DeclareWinningTeamRequest request) {
+        Hackathon hackathon = getManagedHackathon(authentication, hackathonId);
+
+        Team winner = teamRepository.findById(request.teamId())
+                .orElseThrow(() -> new ResourceNotFoundException("Team non trovato"));
+
+        if (winner.getHackathon() == null || !winner.getHackathon().getId().equals(hackathon.getId())) {
+            throw new BusinessLogicException("Il team selezionato non partecipa a questo hackathon");
+        }
+
+        hackathon.declareWinner(winner);
+        Hackathon savedHackathon = hackathonRepository.save(hackathon);
+
+        winner.getMembers().forEach(member -> emailService.sendEmail(
+                member.getEmail(),
+                "Il tuo team ha vinto l'hackathon " + hackathon.getName(),
+                "Complimenti, il team '" + winner.getName() + "' e' stato proclamato vincitore dall'organizzatore."
+        ));
+
+        return mapToResponse(savedHackathon);
+    }
+
+    private Hackathon getManagedHackathon(Authentication authentication, Long id) {
+        Hackathon hackathon = hackathonRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Hackathon non trovato"));
+
+        if (!hackathon.getOrganizer().getUsername().equals(authentication.getName())) {
+            throw new UnauthorizedAccessException("Solo l'organizzatore dell'hackathon puo' eseguire questa operazione");
+        }
+
+        return hackathon;
+    }
+
     private HackathonResponse mapToResponse(Hackathon hackathon) {
         return HackathonResponse.builder()
                 .id(hackathon.getId())
@@ -82,33 +132,13 @@ public class HackathonService {
                 .endDate(hackathon.getEndDate())
                 .reward(hackathon.getReward())
                 .maxTeamSize(hackathon.getMaxTeamSize())
-                .isPublic(hackathon.getIsPublic())
+                .isPublic(Boolean.TRUE.equals(hackathon.getIsPublic()))
                 .state(hackathon.getState())
-                .organizerName(hackathon.getOrganizer() != null ? hackathon.getOrganizer().getName() + " " + hackathon.getOrganizer().getSurname() : "N/A")
+                .organizerName(hackathon.getOrganizer() != null
+                        ? hackathon.getOrganizer().getName() + " " + hackathon.getOrganizer().getSurname()
+                        : "N/A")
+                .winningTeamId(hackathon.getTeamWinner() != null ? hackathon.getTeamWinner().getId() : null)
+                .winningTeamName(hackathon.getTeamWinner() != null ? hackathon.getTeamWinner().getName() : null)
                 .build();
-    }
-
-    public void startHackathon(Authentication authentication, Long id) {
-        Hackathon hackathon = hackathonRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Hackathon non trovato"));
-        
-        if (!hackathon.getOrganizer().getUsername().equals(authentication.getName())) {
-            throw new unicam.ids.HackHub.exceptions.UnauthorizedAccessException("Solo l'organizzatore può avviare l'hackathon");
-        }
-        
-        hackathon.start();
-        hackathonRepository.save(hackathon);
-    }
-
-    public void closeHackathonSubscriptions(Authentication authentication, Long id) {
-        Hackathon hackathon = hackathonRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Hackathon non trovato"));
-        
-        if (!hackathon.getOrganizer().getUsername().equals(authentication.getName())) {
-            throw new unicam.ids.HackHub.exceptions.UnauthorizedAccessException("Solo l'organizzatore può chiudere le iscrizioni");
-        }
-        
-        hackathon.closeSubscriptions();
-        hackathonRepository.save(hackathon);
     }
 }
