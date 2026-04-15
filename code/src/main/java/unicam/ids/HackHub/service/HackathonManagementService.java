@@ -4,6 +4,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import unicam.ids.HackHub.dto.requests.DeclareWinningTeamRequest;
 import unicam.ids.HackHub.dto.requests.hackathon.CreateHackathonRequest;
+import unicam.ids.HackHub.enums.HackathonRole;
 import unicam.ids.HackHub.dto.responses.HackathonResponse;
 import unicam.ids.HackHub.enums.HackathonState;
 import unicam.ids.HackHub.exceptions.BusinessLogicException;
@@ -27,13 +28,21 @@ public class HackathonManagementService {
     private final UserRepository userRepository;
     private final TeamRepository teamRepository;
     private final EmailService emailService;
+    private final PaymentService paymentService;
+    private final TeamMembershipService teamMembershipService;
+    private final HackathonRoleAssignmentService hackathonRoleAssignmentService;
 
     public HackathonManagementService(HackathonRepository hackathonRepository, UserRepository userRepository,
-            TeamRepository teamRepository, EmailService emailService) {
+            TeamRepository teamRepository, EmailService emailService, PaymentService paymentService,
+            TeamMembershipService teamMembershipService,
+            HackathonRoleAssignmentService hackathonRoleAssignmentService) {
         this.hackathonRepository = hackathonRepository;
         this.userRepository = userRepository;
         this.teamRepository = teamRepository;
         this.emailService = emailService;
+        this.paymentService = paymentService;
+        this.teamMembershipService = teamMembershipService;
+        this.hackathonRoleAssignmentService = hackathonRoleAssignmentService;
     }
 
     public List<HackathonResponse> getHackathons(boolean isAuthenticated) {
@@ -72,7 +81,9 @@ public class HackathonManagementService {
                 .organizer(organizer)
                 .build();
 
-        return mapToResponse(hackathonRepository.save(hackathon));
+        Hackathon savedHackathon = hackathonRepository.save(hackathon);
+        hackathonRoleAssignmentService.assignRole(organizer, savedHackathon, HackathonRole.ORGANIZER);
+        return mapToResponse(savedHackathon);
     }
 
     public void startHackathon(Authentication authentication, Long id) {
@@ -101,7 +112,7 @@ public class HackathonManagementService {
         hackathon.declareWinner(winner);
         Hackathon savedHackathon = hackathonRepository.save(hackathon);
 
-        winner.getMembers().forEach(member -> emailService.sendEmail(
+        teamMembershipService.getMembers(winner).forEach(member -> emailService.sendEmail(
                 member.getEmail(),
                 "Il tuo team ha vinto l'hackathon " + hackathon.getName(),
                 "Complimenti, il team '" + winner.getName() + "' e' stato proclamato vincitore dall'organizzatore."
@@ -110,11 +121,19 @@ public class HackathonManagementService {
         return mapToResponse(savedHackathon);
     }
 
+    public void payPrize(Authentication authentication, Long hackathonId) {
+        Hackathon hackathon = getManagedHackathon(authentication, hackathonId);
+        paymentService.payWinningTeam(hackathon);
+    }
+
     private Hackathon getManagedHackathon(Authentication authentication, Long id) {
         Hackathon hackathon = hackathonRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Hackathon non trovato"));
 
-        if (!hackathon.getOrganizer().getUsername().equals(authentication.getName())) {
+        User user = userRepository.findByUsernameAndIsDeletedFalse(authentication.getName())
+                .orElseThrow(() -> new ResourceNotFoundException("Utente non trovato"));
+
+        if (!hackathonRoleAssignmentService.hasRole(user, hackathon, HackathonRole.ORGANIZER)) {
             throw new UnauthorizedAccessException("Solo l'organizzatore dell'hackathon puo' eseguire questa operazione");
         }
 
@@ -134,8 +153,9 @@ public class HackathonManagementService {
                 .maxTeamSize(hackathon.getMaxTeamSize())
                 .isPublic(Boolean.TRUE.equals(hackathon.getIsPublic()))
                 .state(hackathon.getState())
-                .organizerName(hackathon.getOrganizer() != null
-                        ? hackathon.getOrganizer().getName() + " " + hackathon.getOrganizer().getSurname()
+                .organizerName(hackathonRoleAssignmentService.getOrganizer(hackathon) != null
+                        ? hackathonRoleAssignmentService.getOrganizer(hackathon).getName() + " "
+                        + hackathonRoleAssignmentService.getOrganizer(hackathon).getSurname()
                         : "N/A")
                 .winningTeamId(hackathon.getTeamWinner() != null ? hackathon.getTeamWinner().getId() : null)
                 .winningTeamName(hackathon.getTeamWinner() != null ? hackathon.getTeamWinner().getName() : null)

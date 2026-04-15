@@ -103,4 +103,13 @@ public class HackathonController {
             @RequestBody @Valid DeclareWinningTeamRequest request) {
         return ResponseEntity.ok(hackathonService.declareWinningTeam(authentication, id, request));
     }
+
+    @PostMapping("/{id}/pay-prize")
+    @Operation(summary = "Eroga premio al team vincitore", description = "Permette all'organizzatore di avviare separatamente l'erogazione del premio al team vincitore.")
+    @ApiResponse(responseCode = "200", description = "Premio erogato con successo")
+    @ApiResponse(responseCode = "400", description = "Errore durante l'erogazione del premio")
+    public ResponseEntity<String> payPrize(Authentication authentication, @PathVariable Long id) {
+        hackathonService.payPrize(authentication, id);
+        return ResponseEntity.ok("Premio erogato con successo");
+    }
 }

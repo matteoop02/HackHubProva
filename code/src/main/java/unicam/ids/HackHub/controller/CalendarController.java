@@ -11,6 +11,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import unicam.ids.HackHub.dto.requests.BookSupportCallSlotRequest;
 import unicam.ids.HackHub.dto.requests.CreateMentorAvailabilitySlotRequest;
 import unicam.ids.HackHub.dto.requests.ProposeSupportCallRequest;
 import unicam.ids.HackHub.dto.responses.MentorAvailabilitySlotResponse;
@@ -91,5 +92,33 @@ public class CalendarController {
             Authentication authentication,
             @RequestBody @Valid ProposeSupportCallRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(calendarService.proposeSupportCall(authentication, request));
+    }
+
+    @PostMapping("/slots/{slotId}/book")
+    @Operation(
+            summary = "Prenota slot call con mentore",
+            description = "Permette al leader del team di prenotare uno slot per una call con il mentore.",
+            requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    required = true,
+                    content = @Content(
+                            mediaType = "application/json",
+                            examples = @ExampleObject(
+                                    name = "Prenotazione Slot",
+                                    value = """
+                                            {
+                                              "subject": "Supporto sulla demo finale",
+                                              "message": "Vorremmo usare questo slot per rivedere demo e pitch."
+                                            }
+                                            """
+                            )
+                    )
+            )
+    )
+    @ApiResponse(responseCode = "201", description = "Slot prenotato con successo")
+    @ApiResponse(responseCode = "400", description = "Errore nella prenotazione dello slot")
+    public ResponseEntity<SupportCallProposalResponse> bookSupportCallSlot(Authentication authentication,
+            @PathVariable Long slotId,
+            @RequestBody @Valid BookSupportCallSlotRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(calendarService.bookSupportCallSlot(authentication, slotId, request));
     }
 }

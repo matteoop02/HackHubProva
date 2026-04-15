@@ -1,13 +1,19 @@
 package unicam.ids.HackHub.service;
 
 import org.springframework.stereotype.Service;
+import unicam.ids.HackHub.dto.requests.SendSubmissionRequest;
 import unicam.ids.HackHub.dto.requests.submission.UpdateTeamSubmissionRequest;
-import unicam.ids.HackHub.model.Submission;
-import unicam.ids.HackHub.model.User;
-import unicam.ids.HackHub.repository.SubmissionRepository;
-import unicam.ids.HackHub.repository.UserRepository;
+import unicam.ids.HackHub.enums.HackathonRole;
+import unicam.ids.HackHub.exceptions.BusinessLogicException;
 import unicam.ids.HackHub.exceptions.ResourceNotFoundException;
 import unicam.ids.HackHub.exceptions.UnauthorizedAccessException;
+import unicam.ids.HackHub.model.Submission;
+import unicam.ids.HackHub.model.Team;
+import unicam.ids.HackHub.model.User;
+import unicam.ids.HackHub.repository.SubmissionRepository;
+import unicam.ids.HackHub.repository.TeamRepository;
+import unicam.ids.HackHub.repository.UserRepository;
+import unicam.ids.HackHub.util.RoleNames;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -20,10 +26,18 @@ public class SubmissionService {
 
     private final SubmissionRepository submissionRepository;
     private final UserRepository userRepository;
+    private final TeamRepository teamRepository;
+    private final TeamMembershipService teamMembershipService;
+    private final HackathonRoleAssignmentService hackathonRoleAssignmentService;
 
-    public SubmissionService(SubmissionRepository submissionRepository, UserRepository userRepository) {
+    public SubmissionService(SubmissionRepository submissionRepository, UserRepository userRepository,
+            TeamRepository teamRepository, TeamMembershipService teamMembershipService,
+            HackathonRoleAssignmentService hackathonRoleAssignmentService) {
         this.submissionRepository = submissionRepository;
         this.userRepository = userRepository;
+        this.teamRepository = teamRepository;
+        this.teamMembershipService = teamMembershipService;
+        this.hackathonRoleAssignmentService = hackathonRoleAssignmentService;
     }
 
     public List<SubmissionResponse> getSubmissionsByStaffMember(String username) {
@@ -31,9 +45,11 @@ public class SubmissionService {
                 .orElseThrow(() -> new ResourceNotFoundException("Utente non trovato"));
 
         List<Submission> submissions;
-        if ("GIUDICE".equals(user.getRole().getName())) {
+        if (RoleNames.JUDGE.equals(user.getRole().getName())
+                || hackathonRoleAssignmentService.hasAnyAssignment(user, HackathonRole.JUDGE)) {
             submissions = submissionRepository.findByHackathonJudgeUsername(username);
-        } else if ("MENTOR".equals(user.getRole().getName())) {
+        } else if (RoleNames.MENTOR.equals(user.getRole().getName())
+                || hackathonRoleAssignmentService.hasAnyAssignment(user, HackathonRole.MENTOR)) {
             submissions = submissionRepository.findByTeamMentorsUsername(username);
         } else {
             throw new UnauthorizedAccessException("L'utente non e' autorizzato (deve essere GIUDICE o MENTOR)");
@@ -54,19 +70,54 @@ public class SubmissionService {
         submissionRepository.save(submission);
     }
 
+    public SubmissionResponse sendSubmission(org.springframework.security.core.Authentication authentication,
+            SendSubmissionRequest request) {
+        User sender = userRepository.findByUsernameAndIsDeletedFalse(authentication.getName())
+                .orElseThrow(() -> new ResourceNotFoundException("Utente non trovato"));
+
+        Team team = teamRepository.findById(request.teamId())
+                .orElseThrow(() -> new ResourceNotFoundException("Team non trovato"));
+
+        if (!teamMembershipService.isLeader(sender, team)) {
+            throw new UnauthorizedAccessException("Solo il leader del team puo' inviare la sottomissione");
+        }
+        if (team.getHackathon() == null) {
+            throw new BusinessLogicException("Il team non e' iscritto a nessun hackathon");
+        }
+        if (LocalDateTime.now().isAfter(team.getHackathon().getEndDate())) {
+            throw new BusinessLogicException("La scadenza per inviare la sottomissione e' gia' trascorsa");
+        }
+
+        Submission submission = submissionRepository.findByTeamId(team.getId())
+                .orElse(Submission.builder()
+                        .team(team)
+                        .hackathon(team.getHackathon())
+                        .build());
+
+        submission.setTitle(request.title());
+        submission.setContent(request.content());
+        submission.setSendingDate(LocalDateTime.now());
+        submission.setLastEdit(LocalDateTime.now());
+        submission.setState(unicam.ids.HackHub.enums.SubmissionState.INVIATA);
+
+        return mapToResponse(submissionRepository.save(submission));
+    }
+
     public void evaluateSubmission(org.springframework.security.core.Authentication authentication, unicam.ids.HackHub.dto.requests.submission.EvaluateSubmissionRequest request) {
         User evaluator = userRepository.findByUsernameAndIsDeletedFalse(authentication.getName())
                 .orElseThrow(() -> new ResourceNotFoundException("Utente non trovato"));
 
-        if (!"GIUDICE".equals(evaluator.getRole().getName())) {
-            throw new UnauthorizedAccessException("Solo i giudici possono valutare le sottomissioni");
-        }
-
         Submission submission = submissionRepository.findById(request.submissionId())
                 .orElseThrow(() -> new ResourceNotFoundException("Sottomissione non trovata"));
 
-        if (submission.getHackathon() == null || submission.getHackathon().getJudge() == null || 
-            !submission.getHackathon().getJudge().getId().equals(evaluator.getId())) {
+        if (!RoleNames.JUDGE.equals(evaluator.getRole().getName())
+                && (submission.getHackathon() == null
+                || !hackathonRoleAssignmentService.hasRole(evaluator, submission.getHackathon(), HackathonRole.JUDGE))) {
+            throw new UnauthorizedAccessException("Solo i giudici possono valutare le sottomissioni");
+        }
+
+        if (submission.getHackathon() == null
+                || !hackathonRoleAssignmentService.hasRole(evaluator, submission.getHackathon(), HackathonRole.JUDGE)) {
             throw new UnauthorizedAccessException("Non sei il giudice di questo hackathon");
         }
 

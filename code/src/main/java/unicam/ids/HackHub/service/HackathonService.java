@@ -5,6 +5,7 @@ import org.springframework.stereotype.Service;
 import unicam.ids.HackHub.dto.requests.DeclareWinningTeamRequest;
 import unicam.ids.HackHub.dto.requests.hackathon.CreateHackathonRequest;
 import unicam.ids.HackHub.dto.responses.HackathonResponse;
+import unicam.ids.HackHub.enums.HackathonRole;
 import unicam.ids.HackHub.enums.HackathonState;
 import unicam.ids.HackHub.exceptions.BusinessLogicException;
 import unicam.ids.HackHub.exceptions.ResourceNotFoundException;
@@ -27,13 +28,16 @@ public class HackathonService {
     private final UserRepository userRepository;
     private final TeamRepository teamRepository;
     private final EmailService emailService;
+    private final HackathonRoleAssignmentService hackathonRoleAssignmentService;
 
     public HackathonService(HackathonRepository hackathonRepository, UserRepository userRepository,
-            TeamRepository teamRepository, EmailService emailService) {
+            TeamRepository teamRepository, EmailService emailService,
+            HackathonRoleAssignmentService hackathonRoleAssignmentService) {
         this.hackathonRepository = hackathonRepository;
         this.userRepository = userRepository;
         this.teamRepository = teamRepository;
         this.emailService = emailService;
+        this.hackathonRoleAssignmentService = hackathonRoleAssignmentService;
     }
 
     public List<HackathonResponse> getHackathons(boolean isAuthenticated) {
@@ -48,7 +52,7 @@ public class HackathonService {
 
     public HackathonResponse createHackathon(Authentication authentication, CreateHackathonRequest request) {
         Optional<Hackathon> hackathonOptional = hackathonRepository.findByName(request.name());
-        if(hackathonOptional.isEmpty()) {
+        if(hackathonOptional.isPresent()) {
             throw new IllegalArgumentException("Hakcathon con il nome scelto già esistente");
         }
         User organizer = userRepository.findByUsernameAndIsDeletedFalse(authentication.getName())
@@ -68,7 +72,9 @@ public class HackathonService {
                 .organizer(organizer)
                 .build();
 
-        return mapToResponse(hackathonRepository.save(hackathon));
+        Hackathon savedHackathon = hackathonRepository.save(hackathon);
+        hackathonRoleAssignmentService.assignRole(organizer, savedHackathon, HackathonRole.ORGANIZER);
+        return mapToResponse(savedHackathon);
     }
 
     private HackathonResponse mapToResponse(Hackathon hackathon) {
@@ -84,15 +90,20 @@ public class HackathonService {
                 .maxTeamSize(hackathon.getMaxTeamSize())
                 .isPublic(hackathon.getIsPublic())
                 .state(hackathon.getState())
-                .organizerName(hackathon.getOrganizer() != null ? hackathon.getOrganizer().getName() + " " + hackathon.getOrganizer().getSurname() : "N/A")
+                .organizerName(hackathonRoleAssignmentService.getOrganizer(hackathon) != null
+                        ? hackathonRoleAssignmentService.getOrganizer(hackathon).getName() + " "
+                        + hackathonRoleAssignmentService.getOrganizer(hackathon).getSurname()
+                        : "N/A")
                 .build();
     }
 
     public void startHackathon(Authentication authentication, Long id) {
         Hackathon hackathon = hackathonRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Hackathon non trovato"));
+        User user = userRepository.findByUsernameAndIsDeletedFalse(authentication.getName())
+                .orElseThrow(() -> new ResourceNotFoundException("Utente non trovato o eliminato"));
         
-        if (!hackathon.getOrganizer().getUsername().equals(authentication.getName())) {
+        if (!hackathonRoleAssignmentService.hasRole(user, hackathon, HackathonRole.ORGANIZER)) {
             throw new unicam.ids.HackHub.exceptions.UnauthorizedAccessException("Solo l'organizzatore può avviare l'hackathon");
         }
         
@@ -103,8 +114,10 @@ public class HackathonService {
     public void closeHackathonSubscriptions(Authentication authentication, Long id) {
         Hackathon hackathon = hackathonRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Hackathon non trovato"));
+        User user = userRepository.findByUsernameAndIsDeletedFalse(authentication.getName())
+                .orElseThrow(() -> new ResourceNotFoundException("Utente non trovato o eliminato"));
         
-        if (!hackathon.getOrganizer().getUsername().equals(authentication.getName())) {
+        if (!hackathonRoleAssignmentService.hasRole(user, hackathon, HackathonRole.ORGANIZER)) {
             throw new unicam.ids.HackHub.exceptions.UnauthorizedAccessException("Solo l'organizzatore può chiudere le iscrizioni");
         }
         

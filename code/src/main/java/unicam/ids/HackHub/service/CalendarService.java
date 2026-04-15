@@ -3,10 +3,12 @@ package unicam.ids.HackHub.service;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
+import unicam.ids.HackHub.dto.requests.BookSupportCallSlotRequest;
 import unicam.ids.HackHub.dto.requests.CreateMentorAvailabilitySlotRequest;
 import unicam.ids.HackHub.dto.requests.ProposeSupportCallRequest;
 import unicam.ids.HackHub.dto.responses.MentorAvailabilitySlotResponse;
 import unicam.ids.HackHub.dto.responses.SupportCallProposalResponse;
+import unicam.ids.HackHub.enums.HackathonRole;
 import unicam.ids.HackHub.exceptions.BusinessLogicException;
 import unicam.ids.HackHub.exceptions.ResourceNotFoundException;
 import unicam.ids.HackHub.exceptions.UnauthorizedAccessException;
@@ -35,6 +37,8 @@ public class CalendarService {
     private final MentorAvailabilitySlotRepository mentorAvailabilitySlotRepository;
     private final SupportCallProposalRepository supportCallProposalRepository;
     private final EmailService emailService;
+    private final TeamMembershipService teamMembershipService;
+    private final HackathonRoleAssignmentService hackathonRoleAssignmentService;
 
     public MentorAvailabilitySlotResponse createAvailabilitySlot(Authentication authentication,
             CreateMentorAvailabilitySlotRequest request) {
@@ -44,7 +48,7 @@ public class CalendarService {
         Hackathon hackathon = hackathonRepository.findById(request.hackathonId())
                 .orElseThrow(() -> new ResourceNotFoundException("Hackathon non trovato"));
 
-        if (!hackathon.getMentors().stream().anyMatch(user -> Objects.equals(user.getId(), mentor.getId()))) {
+        if (!hackathonRoleAssignmentService.hasRole(mentor, hackathon, HackathonRole.MENTOR)) {
             throw new UnauthorizedAccessException("Il mentore non e' assegnato a questo hackathon");
         }
 
@@ -76,7 +80,7 @@ public class CalendarService {
 
         Hackathon hackathon = team.getHackathon();
         boolean mentorAssigned = team.getMentors().stream().anyMatch(user -> Objects.equals(user.getId(), mentor.getId()))
-                || hackathon.getMentors().stream().anyMatch(user -> Objects.equals(user.getId(), mentor.getId()));
+                || hackathonRoleAssignmentService.hasRole(mentor, hackathon, HackathonRole.MENTOR);
 
         if (!mentorAssigned) {
             throw new UnauthorizedAccessException("Il mentore non e' assegnato al team o all'hackathon");
@@ -125,9 +129,10 @@ public class CalendarService {
             mentorAvailabilitySlotRepository.save(slot);
         }
 
-        if (team.getTeamLeader() != null) {
+        User teamLeader = teamMembershipService.getLeader(team);
+        if (teamLeader != null) {
             emailService.sendEmail(
-                    team.getTeamLeader().getEmail(),
+                    teamLeader.getEmail(),
                     "Nuova proposta di call di supporto per il team " + team.getName(),
                     "Il mentore " + mentor.getName() + " " + mentor.getSurname()
                             + " ha proposto una call di supporto.\n"
@@ -140,13 +145,63 @@ public class CalendarService {
         return mapProposal(savedProposal);
     }
 
+    public SupportCallProposalResponse bookSupportCallSlot(Authentication authentication, Long slotId,
+            BookSupportCallSlotRequest request) {
+        User leader = getAuthenticatedUser(authentication);
+        Team team = teamMembershipService.getCurrentTeam(leader);
+
+        if (team == null || !teamMembershipService.isLeader(leader, team)) {
+            throw new UnauthorizedAccessException("Solo il leader del team puo' prenotare uno slot con il mentore");
+        }
+        if (team.getHackathon() == null) {
+            throw new BusinessLogicException("Il team non e' iscritto a nessun hackathon");
+        }
+
+        MentorAvailabilitySlot slot = mentorAvailabilitySlotRepository.findById(slotId)
+                .orElseThrow(() -> new ResourceNotFoundException("Slot non trovato"));
+
+        if (!slot.getHackathon().getId().equals(team.getHackathon().getId())) {
+            throw new BusinessLogicException("Lo slot non appartiene all'hackathon del team");
+        }
+        if (Boolean.TRUE.equals(slot.getBooked())) {
+            throw new BusinessLogicException("Lo slot selezionato e' gia' stato prenotato");
+        }
+
+        SupportCallProposal proposal = SupportCallProposal.builder()
+                .mentor(slot.getMentor())
+                .team(team)
+                .hackathon(team.getHackathon())
+                .slot(slot)
+                .subject(request.subject())
+                .message(request.message())
+                .proposedStartTime(slot.getStartTime())
+                .proposedEndTime(slot.getEndTime())
+                .status("PRENOTATA")
+                .build();
+
+        slot.setBooked(true);
+        mentorAvailabilitySlotRepository.save(slot);
+        SupportCallProposal savedProposal = supportCallProposalRepository.save(proposal);
+
+        emailService.sendEmail(
+                slot.getMentor().getEmail(),
+                "Nuova prenotazione slot con il team " + team.getName(),
+                "Il leader del team " + leader.getName() + " " + leader.getSurname()
+                        + " ha prenotato lo slot " + slot.getStartTime() + " - " + slot.getEndTime()
+                        + ".\nOggetto: " + request.subject() + "\nMessaggio: " + request.message()
+        );
+
+        return mapProposal(savedProposal);
+    }
+
     private User getAuthenticatedUser(Authentication authentication) {
         return userRepository.findByUsernameAndIsDeletedFalse(authentication.getName())
                 .orElseThrow(() -> new ResourceNotFoundException("Utente non trovato"));
     }
 
     private void ensureMentor(User mentor) {
-        if (!RoleNames.MENTOR.equals(mentor.getRole().getName())) {
+        if (!RoleNames.MENTOR.equals(mentor.getRole().getName())
+                && !hackathonRoleAssignmentService.hasAnyAssignment(mentor, HackathonRole.MENTOR)) {
             throw new UnauthorizedAccessException("Solo i mentori possono eseguire questa operazione");
         }
     }

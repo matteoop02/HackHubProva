@@ -2,10 +2,12 @@ package unicam.ids.HackHub.service;
 
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
+import unicam.ids.HackHub.dto.requests.AcceptInsideInviteRequest;
 import unicam.ids.HackHub.dto.requests.invite.InsideInviteRequest;
 import unicam.ids.HackHub.dto.requests.invite.RejectInsideInviteRequest;
 import unicam.ids.HackHub.dto.requests.invite.RejectOutsideInviteRequest;
 import unicam.ids.HackHub.enums.InviteState;
+import unicam.ids.HackHub.enums.TeamRole;
 import unicam.ids.HackHub.model.InviteInsidePlatform;
 import unicam.ids.HackHub.model.InviteOutsidePlatform;
 import unicam.ids.HackHub.model.User;
@@ -19,6 +21,8 @@ import unicam.ids.HackHub.dto.responses.InviteResponse;
 import unicam.ids.HackHub.exceptions.BusinessLogicException;
 import unicam.ids.HackHub.exceptions.ResourceNotFoundException;
 import unicam.ids.HackHub.exceptions.UnauthorizedAccessException;
+import unicam.ids.HackHub.model.Hackathon;
+import unicam.ids.HackHub.model.Team;
 
 @Service
 public class InviteService {
@@ -28,17 +32,20 @@ public class InviteService {
     private final UserRepository userRepository;
     private final UserRoleRepository userRoleRepository;
     private final EmailService emailService;
+    private final TeamMembershipService teamMembershipService;
 
     public InviteService(InsideInviteRepository insideInviteRepository, 
                          OutsideInviteRepository outsideInviteRepository,
                          UserRepository userRepository,
                          UserRoleRepository userRoleRepository,
-                         EmailService emailService) {
+                         EmailService emailService,
+                         TeamMembershipService teamMembershipService) {
         this.insideInviteRepository = insideInviteRepository;
         this.outsideInviteRepository = outsideInviteRepository;
         this.userRepository = userRepository;
         this.userRoleRepository = userRoleRepository;
         this.emailService = emailService;
+        this.teamMembershipService = teamMembershipService;
     }
 
     public void rejectOutsideInvite(RejectOutsideInviteRequest request) {
@@ -55,7 +62,8 @@ public class InviteService {
         User recipient = userRepository.findById(request.recipientId())
                 .orElseThrow(() -> new ResourceNotFoundException("Destinatario non trovato"));
 
-        if (sender.getTeam() == null || sender.getTeam().getTeamLeader() == null || !sender.getTeam().getTeamLeader().getId().equals(sender.getId())) {
+        Team senderTeam = teamMembershipService.getCurrentTeam(sender);
+        if (senderTeam == null || !teamMembershipService.isLeader(sender, senderTeam)) {
             throw new BusinessLogicException("Devi essere il leader del tuo team per invitare altri utenti");
         }
         
@@ -65,7 +73,7 @@ public class InviteService {
         InviteInsidePlatform invite = InviteInsidePlatform.builder()
                 .senderUser(sender)
                 .recipientUser(recipient)
-                .team(sender.getTeam())
+                .team(senderTeam)
                 .proposedRole(role)
                 .message(request.message())
                 .status(InviteState.IN_ATTESA)
@@ -98,6 +106,41 @@ public class InviteService {
         
         invite.reject();
         insideInviteRepository.save(invite);
+    }
+
+    public InviteResponse acceptTeamInvite(Authentication authentication, AcceptInsideInviteRequest request) {
+        InviteInsidePlatform invite = insideInviteRepository.findById(request.inviteId())
+                .orElseThrow(() -> new ResourceNotFoundException("Invito interno non trovato"));
+
+        User recipient = userRepository.findByUsernameAndIsDeletedFalse(authentication.getName())
+                .orElseThrow(() -> new ResourceNotFoundException("Utente non trovato"));
+
+        if (!invite.getRecipientUser().getId().equals(recipient.getId())) {
+            throw new UnauthorizedAccessException("Non sei l'utente destinatario di questo invito");
+        }
+
+        if (invite.isExpired()) {
+            invite.setStatus(InviteState.SCADUTO);
+            insideInviteRepository.save(invite);
+            throw new BusinessLogicException("L'invito e' scaduto");
+        }
+
+        if (teamMembershipService.hasTeam(recipient)) {
+            throw new BusinessLogicException("L'utente appartiene gia' a un team");
+        }
+
+        Team team = invite.getTeam();
+        Hackathon hackathon = team.getHackathon();
+        if (hackathon != null && teamMembershipService.countMembers(team) >= hackathon.getMaxTeamSize()) {
+            throw new BusinessLogicException("Il team ha gia' raggiunto il numero massimo di membri");
+        }
+
+        invite.accept();
+        teamMembershipService.addMembership(recipient, team, TeamRole.MEMBER);
+
+        insideInviteRepository.save(invite);
+
+        return mapToResponse(invite);
     }
 
     public void createOutsideInvite(Authentication authentication, unicam.ids.HackHub.dto.requests.invite.CreateOutsideInviteRequest request) {

@@ -7,6 +7,7 @@ import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import unicam.ids.HackHub.dto.requests.AcceptInsideInviteRequest;
 import unicam.ids.HackHub.dto.requests.invite.*;
 import unicam.ids.HackHub.dto.responses.InviteResponse;
 import org.springframework.http.HttpStatus;
@@ -64,6 +65,32 @@ public class InviteController {
 
         InviteResponse invite = inviteService.inviteUserToTeam(authentication, insideInviteRequest);
         return ResponseEntity.status(HttpStatus.CREATED).body(invite);
+    }
+
+    @PostMapping("/inviteManage/acceptTeamInvite")
+    @Operation(
+            summary = "Accetta invito al team",
+            description = "Permette a un utente autenticato di accettare un invito ricevuto per entrare in un team.",
+            requestBody = @RequestBody(
+                    required = true,
+                    content = @Content(
+                            mediaType = "application/json",
+                            examples = @ExampleObject(
+                                    name = "Accettazione Invito Team",
+                                    value = """
+                                            {
+                                              "inviteId": 1
+                                            }
+                                            """
+                            )
+                    )
+            )
+    )
+    @ApiResponse(responseCode = "200", description = "Invito accettato con successo")
+    @ApiResponse(responseCode = "400", description = "Errore durante l'accettazione dell'invito")
+    public ResponseEntity<InviteResponse> acceptTeamInvite(Authentication authentication,
+            @RequestBody @Valid AcceptInsideInviteRequest request) {
+        return ResponseEntity.ok(inviteService.acceptTeamInvite(authentication, request));
     }
 
     @PostMapping("/inviteManage/rejectTeamInvite")

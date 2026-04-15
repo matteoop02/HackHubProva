@@ -11,6 +11,7 @@ import unicam.ids.HackHub.dto.responses.UserResponse;
 import unicam.ids.HackHub.exceptions.BusinessLogicException;
 import unicam.ids.HackHub.exceptions.ResourceNotFoundException;
 import unicam.ids.HackHub.exceptions.UnauthorizedAccessException;
+import unicam.ids.HackHub.enums.HackathonRole;
 import unicam.ids.HackHub.model.User;
 import unicam.ids.HackHub.model.UserRole;
 import unicam.ids.HackHub.repository.UserRepository;
@@ -36,6 +37,8 @@ public class AuthService {
     private final UserRoleRepository userRoleRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
+    private final TeamMembershipService teamMembershipService;
+    private final HackathonRoleAssignmentService hackathonRoleAssignmentService;
 
     public AuthResponse register(RegisterRequest request) {
         if (userRepository.existsByUsername(request.username())) {
@@ -129,20 +132,23 @@ public class AuthService {
         List<String> actors = new ArrayList<>();
         actors.add("UTENTE_REGISTRATO");
 
-        if (user.getTeam() != null) {
+        if (teamMembershipService.hasTeam(user)) {
             actors.add("MEMBRO_DEL_TEAM");
-            if (user.getTeam().getTeamLeader() != null && user.getTeam().getTeamLeader().getId().equals(user.getId())) {
+            if (teamMembershipService.isLeader(user, teamMembershipService.getCurrentTeam(user))) {
                 actors.add("LEADER_DEL_TEAM");
             }
         }
 
-        if (RoleNames.ORGANIZER.equals(user.getRole().getName())) {
+        if (RoleNames.ORGANIZER.equals(user.getRole().getName())
+                || hackathonRoleAssignmentService.hasAnyAssignment(user, HackathonRole.ORGANIZER)) {
             actors.add("ORGANIZZATORE_HACKATHON");
         }
-        if (RoleNames.JUDGE.equals(user.getRole().getName())) {
+        if (RoleNames.JUDGE.equals(user.getRole().getName())
+                || hackathonRoleAssignmentService.hasAnyAssignment(user, HackathonRole.JUDGE)) {
             actors.add("GIUDICE_HACKATHON");
         }
-        if (RoleNames.MENTOR.equals(user.getRole().getName())) {
+        if (RoleNames.MENTOR.equals(user.getRole().getName())
+                || hackathonRoleAssignmentService.hasAnyAssignment(user, HackathonRole.MENTOR)) {
             actors.add("MENTORE_HACKATHON");
         }
 

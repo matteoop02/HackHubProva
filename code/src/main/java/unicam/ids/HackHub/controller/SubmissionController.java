@@ -11,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import unicam.ids.HackHub.dto.requests.SendSubmissionRequest;
 import unicam.ids.HackHub.dto.requests.submission.*;
 import unicam.ids.HackHub.dto.responses.SubmissionResponse;
 import unicam.ids.HackHub.service.SubmissionService;
@@ -35,6 +36,34 @@ public class SubmissionController {
     @ApiResponse(responseCode = "400", description = "Errore nella richiesta")
     public ResponseEntity<List<SubmissionResponse>> getSubmissionsListByHackathonName(Authentication authentication) {
         return ResponseEntity.ok(submissionService.getSubmissionsByStaffMember(authentication.getName()));
+    }
+
+    @PostMapping("/team/send")
+    @Operation(
+            summary = "Invia sottomissione team",
+            description = "Permette al leader del team di inviare ufficialmente la sottomissione prima della scadenza.",
+            requestBody = @RequestBody(
+                    required = true,
+                    content = @Content(
+                            mediaType = "application/json",
+                            examples = @ExampleObject(
+                                    name = "Invio Submission",
+                                    value = """
+                                            {
+                                              "teamId": 1,
+                                              "title": "Smart Mobility Platform",
+                                              "content": "Versione finale del progetto con demo, API REST e dashboard."
+                                            }
+                                            """
+                            )
+                    )
+            )
+    )
+    @ApiResponse(responseCode = "200", description = "Sottomissione inviata con successo")
+    @ApiResponse(responseCode = "400", description = "Errore nell'invio della sottomissione")
+    public ResponseEntity<SubmissionResponse> sendSubmission(Authentication authentication,
+            @Valid @org.springframework.web.bind.annotation.RequestBody SendSubmissionRequest request) {
+        return ResponseEntity.ok(submissionService.sendSubmission(authentication, request));
     }
 
     /**

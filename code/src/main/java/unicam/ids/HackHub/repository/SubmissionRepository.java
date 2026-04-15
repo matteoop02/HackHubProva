@@ -12,4 +12,6 @@ public interface SubmissionRepository extends JpaRepository<Submission, Long> {
     List<Submission> findByHackathonJudgeUsername(String username);
     
     List<Submission> findByTeamMentorsUsername(String username);
+
+    Optional<Submission> findByTeamId(Long teamId);
 }
