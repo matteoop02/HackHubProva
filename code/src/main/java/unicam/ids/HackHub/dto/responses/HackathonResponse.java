@@ -2,8 +2,6 @@ package unicam.ids.HackHub.dto.responses;
 
 import lombok.Builder;
 import unicam.ids.HackHub.enums.HackathonState;
-import unicam.ids.HackHub.model.Team;
-import unicam.ids.HackHub.model.User;
 import java.util.Set;
 import java.time.LocalDateTime;
 
@@ -21,9 +19,10 @@ public record HackathonResponse(
     boolean isPublic,
     HackathonState state,
     String organizerName,
-    Set<User> mentors,
-    User judge,
-    Set<Team> teams,
+    Set<Long> mentorIds,
+    Long judgeId,
+    String judgeName,
+    Set<Long> teamIds,
     Long winningTeamId,
     String winningTeamName) {
 }

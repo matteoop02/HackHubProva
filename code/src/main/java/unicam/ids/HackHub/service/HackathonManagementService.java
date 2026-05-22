@@ -236,6 +236,7 @@ public class HackathonManagementService {
 
     private HackathonResponse mapToResponse(Hackathon hackathon) {
         User organizer = hackathonRoleAssignmentService.getOrganizer(hackathon);
+        User judge = hackathonRoleAssignmentService.getJudge(hackathon);
         return HackathonResponse.builder()
                 .id(hackathon.getId())
                 .name(hackathon.getName())
@@ -249,9 +250,14 @@ public class HackathonManagementService {
                 .isPublic(Boolean.TRUE.equals(hackathon.getIsPublic()))
                 .state(hackathon.getState())
                 .organizerName(organizer != null ? organizer.getName() + " " + organizer.getSurname() : "N/A")
-                .mentors(hackathonRoleAssignmentService.getMentors(hackathon))
-                .judge(hackathonRoleAssignmentService.getJudge(hackathon))
-                .teams(hackathon.getTeams())
+                .mentorIds(hackathonRoleAssignmentService.getMentors(hackathon).stream()
+                        .map(User::getId)
+                        .collect(Collectors.toSet()))
+                .judgeId(judge != null ? judge.getId() : null)
+                .judgeName(judge != null ? judge.getName() + " " + judge.getSurname() : null)
+                .teamIds(hackathon.getTeams().stream()
+                        .map(Team::getId)
+                        .collect(Collectors.toSet()))
                 .winningTeamId(hackathon.getTeamWinner() != null ? hackathon.getTeamWinner().getId() : null)
                 .winningTeamName(hackathon.getTeamWinner() != null ? hackathon.getTeamWinner().getName() : null)
                 .build();
