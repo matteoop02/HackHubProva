@@ -162,12 +162,6 @@ public class HackathonManagementService {
         hackathonRoleAssignmentService.assignRole(judge, hackathon, HackathonRole.JUDGE);
     }
 
-    public void removeJudge(Authentication authentication, Long hackathonId, Long judgeId) {
-        Hackathon hackathon = getManagedHackathon(authentication, hackathonId);
-        User judge = getActiveUser(judgeId, "Giudice non trovato");
-        hackathonRoleAssignmentService.removeRole(judge, hackathon, HackathonRole.JUDGE);
-    }
-
     public void assignMentors(Authentication authentication, Long hackathonId, AssignMentorsRequest request) {
         Hackathon hackathon = getManagedHackathon(authentication, hackathonId);
 

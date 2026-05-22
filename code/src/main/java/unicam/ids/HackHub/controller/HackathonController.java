@@ -117,14 +117,6 @@ public class HackathonController {
         return ResponseEntity.ok("Giudice assegnato con successo");
     }
 
-    @DeleteMapping("/{id}/judge/{judgeId}")
-    @Operation(summary = "Rimuovi giudice dall'hackathon", description = "Permette all'organizzatore di rimuovere il giudice assegnato all'hackathon.")
-    public ResponseEntity<String> removeJudge(Authentication authentication, @PathVariable Long id,
-            @PathVariable Long judgeId) {
-        hackathonService.removeJudge(authentication, id, judgeId);
-        return ResponseEntity.ok("Giudice rimosso con successo");
-    }
-
     @PostMapping("/{id}/mentors")
     @Operation(summary = "Aggiungi mentori all'hackathon", description = "Permette all'organizzatore di assegnare uno o piu' mentori all'hackathon.")
     public ResponseEntity<String> assignMentors(Authentication authentication, @PathVariable Long id,
