@@ -76,11 +76,11 @@ public class Hackathon {
     private Set<Team> teams = new HashSet<>();
 
     public void start() {
-        unicam.ids.HackHub.factory.HackathonStateFactory.from(this.state).start(this);
+        this.state.createBehavior().start(this);
     }
 
     public void closeSubscriptions() {
-        unicam.ids.HackHub.factory.HackathonStateFactory.from(this.state).closeSubscriptions(this);
+        this.state.createBehavior().closeSubscriptions(this);
     }
 
     public void declareWinner(Team winner) {

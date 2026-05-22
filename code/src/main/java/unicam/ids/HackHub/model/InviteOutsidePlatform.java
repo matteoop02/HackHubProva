@@ -7,7 +7,6 @@ import lombok.NoArgsConstructor;
 
 import jakarta.persistence.*;
 import unicam.ids.HackHub.enums.InviteState;
-import unicam.ids.HackHub.factory.InviteStateFactory;
 
 import java.time.LocalDateTime;
 
@@ -56,17 +55,17 @@ public class InviteOutsidePlatform implements Invite {
 
     @Override
     public void send() {
-        InviteStateFactory.from(this.status).send(this);
+        this.status.createBehavior().send(this);
     }
 
     @Override
     public void accept() {
-        InviteStateFactory.from(this.status).accept(this);
+        this.status.createBehavior().accept(this);
     }
 
     @Override
     public void reject() {
-        InviteStateFactory.from(this.status).reject(this);
+        this.status.createBehavior().reject(this);
     }
 
     @Override
