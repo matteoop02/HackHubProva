@@ -42,3 +42,6 @@ bin/
 .DS_Store
 
 .lck
+
+/code/oracleJdk-26/
+/model/visual-paradigm/*.vpp.bak_*
