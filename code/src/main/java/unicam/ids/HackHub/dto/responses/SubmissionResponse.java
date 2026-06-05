@@ -10,5 +10,11 @@ public record SubmissionResponse(
         String content,
         LocalDateTime submittedAt,
         Long teamId,
-        String teamName
+        String teamName,
+        Double score,
+        String comment,
+        Long judgeId,
+        String judgeName,
+        LocalDateTime evaluatedAt,
+        LocalDateTime lastModifiedAt
 ) {}

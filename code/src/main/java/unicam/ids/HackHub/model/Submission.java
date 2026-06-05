@@ -1,8 +1,6 @@
 package unicam.ids.HackHub.model;
 
 import jakarta.persistence.*;
-import jakarta.validation.constraints.DecimalMax;
-import jakarta.validation.constraints.DecimalMin;
 import lombok.*;
 import unicam.ids.HackHub.enums.SubmissionState;
 
@@ -38,13 +36,8 @@ public class Submission {
     @Column(name = "State", nullable = false)
     private SubmissionState state;
 
-    @DecimalMin("0.0")
-    @DecimalMax("10.0")
-    @Column(name = "Score")
-    private Double score;
-
-    @Column(name = "Comment", length = 1000)
-    private String comment;
+    @OneToOne(mappedBy = "submission", cascade = CascadeType.ALL, orphanRemoval = true)
+    private SubmissionEvaluation evaluation;
 
     @OneToOne
     @JoinColumn(name = "TeamID")

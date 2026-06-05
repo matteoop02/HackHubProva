@@ -8,8 +8,10 @@ import unicam.ids.HackHub.exceptions.BusinessLogicException;
 import unicam.ids.HackHub.exceptions.ResourceNotFoundException;
 import unicam.ids.HackHub.exceptions.UnauthorizedAccessException;
 import unicam.ids.HackHub.model.Submission;
+import unicam.ids.HackHub.model.SubmissionEvaluation;
 import unicam.ids.HackHub.model.Team;
 import unicam.ids.HackHub.model.User;
+import unicam.ids.HackHub.repository.SubmissionEvaluationRepository;
 import unicam.ids.HackHub.repository.SubmissionRepository;
 import unicam.ids.HackHub.repository.TeamRepository;
 import unicam.ids.HackHub.repository.UserRepository;
@@ -25,15 +27,18 @@ import java.util.stream.Collectors;
 public class SubmissionService {
 
     private final SubmissionRepository submissionRepository;
+    private final SubmissionEvaluationRepository submissionEvaluationRepository;
     private final UserRepository userRepository;
     private final TeamRepository teamRepository;
     private final TeamMembershipService teamMembershipService;
     private final HackathonRoleAssignmentService hackathonRoleAssignmentService;
 
-    public SubmissionService(SubmissionRepository submissionRepository, UserRepository userRepository,
+    public SubmissionService(SubmissionRepository submissionRepository,
+            SubmissionEvaluationRepository submissionEvaluationRepository, UserRepository userRepository,
             TeamRepository teamRepository, TeamMembershipService teamMembershipService,
             HackathonRoleAssignmentService hackathonRoleAssignmentService) {
         this.submissionRepository = submissionRepository;
+        this.submissionEvaluationRepository = submissionEvaluationRepository;
         this.userRepository = userRepository;
         this.teamRepository = teamRepository;
         this.teamMembershipService = teamMembershipService;
@@ -124,14 +129,30 @@ public class SubmissionService {
             throw new BusinessLogicException("La valutazione puo' essere inserita o modificata solo durante la fase di valutazione");
         }
 
-        submission.setScore(request.score());
-        submission.setComment(request.comment());
+        LocalDateTime now = LocalDateTime.now();
+        SubmissionEvaluation evaluation = submissionEvaluationRepository.findBySubmissionId(submission.getId())
+                .orElse(SubmissionEvaluation.builder()
+                        .submission(submission)
+                        .judge(evaluator)
+                        .evaluatedAt(now)
+                        .build());
+
+        evaluation.setJudge(evaluator);
+        evaluation.setScore(request.score());
+        evaluation.setComment(request.comment());
+        evaluation.setLastModifiedAt(now);
+
         submission.setState(unicam.ids.HackHub.enums.SubmissionState.VALUTATA);
-        
+
+        SubmissionEvaluation savedEvaluation = submissionEvaluationRepository.save(evaluation);
+        submission.setEvaluation(savedEvaluation);
         submissionRepository.save(submission);
     }
 
     private SubmissionResponse mapToResponse(Submission submission) {
+        SubmissionEvaluation evaluation = submission.getEvaluation();
+        User judge = evaluation != null ? evaluation.getJudge() : null;
+
         return SubmissionResponse.builder()
                 .id(submission.getId())
                 .title(submission.getTitle())
@@ -139,6 +160,12 @@ public class SubmissionService {
                 .submittedAt(submission.getSendingDate())
                 .teamId(submission.getTeam() != null ? submission.getTeam().getId() : null)
                 .teamName(submission.getTeam() != null ? submission.getTeam().getName() : "N/A")
+                .score(evaluation != null ? evaluation.getScore() : null)
+                .comment(evaluation != null ? evaluation.getComment() : null)
+                .judgeId(judge != null ? judge.getId() : null)
+                .judgeName(judge != null ? judge.getName() + " " + judge.getSurname() : null)
+                .evaluatedAt(evaluation != null ? evaluation.getEvaluatedAt() : null)
+                .lastModifiedAt(evaluation != null ? evaluation.getLastModifiedAt() : null)
                 .build();
     }
 }
